@@ -1,0 +1,51 @@
+/**
+	 * 用户登录验证
+	 * @throws UnknownHostException 抛出无法解析域名异常
+	 */
+	public void loginSystem() throws UnknownHostException {
+		String username=getPara("user_name");//用户名
+		String password=getPara("password");//密码
+		Integer remember_pwd=getParaToInt("remember_pwd");//记住密码按钮值    0：不记住密码  1：记住密码
+		getSession().setAttribute("password", password);//将密码存入sesstion中
+		getSession().setAttribute("remember_pwd", remember_pwd);//将记住密码存入sesstion中
+		User user=User.dao.byUsernameFindInfo(username);//根据用户名查询用户
+		if(user!=null){//用户存在
+			if(PasswordUtil.encodePassword(password).equals(user.getUserPassword())){//判断密码是否正确
+				
+				aController addressUtils = new aController(); 
+				 InetAddress address1 = InetAddress.getByName("www.evzsmart.com");
+				 String hostAddress1 = address1.getHostAddress();//获取服务器ip地址
+				 String ip = hostAddress1; 
+				 String address = ""; //服务器地区
+				 try { 
+				  address = addressUtils.getAddresses("ip="+ip, "utf-8"); 
+				 } catch (UnsupportedEncodingException e) { 
+				  e.printStackTrace(); 
+				 } 
+				
+				UserLogs userlogs=new UserLogs();
+				userlogs.setType("1");
+				Date date=new Date();
+				SimpleDateFormat dateFormat=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				userlogs.setTime(dateFormat.format(date));
+				userlogs.setContent("登陆成功！");
+				userlogs.setUserName(user.getId());
+				userlogs.setIp(hostAddress1);
+				userlogs.setAddress(address);
+				userlogs.save();//添加登录日志
+				
+				setSessionAttr("sysUser", user);
+				Kv by = Kv.by("msg", "登录成功");
+				by.set("t", 1);
+				renderJson(by);
+			}else{
+				Kv by = Kv.by("msg", "密码错误！");
+				by.set("t", 0);
+				renderJson(by);
+			}
+		}else{
+			Kv by = Kv.by("msg", "用户名不存在！");
+			by.set("t", 0);
+			renderJson(by);
+		}
+	}
